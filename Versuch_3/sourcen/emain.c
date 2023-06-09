@@ -156,7 +156,7 @@ void timer1_init()
 
     // CMPA1
     // Compare Match Register auf ...
-    buf = 20000;
+    buf = 19000;
     io_out16(CMPA1, buf);
 }
 
@@ -347,9 +347,8 @@ uhrzeit akt_zeit, hoch_zeit, runter_zeit;
 // ...
 
 
-void init_spi1(){
-	// Diese Funktion muss noch mit Leben gefuellt werden.
-	// ...
+void init_spi1(){ //SPI1 als slave konfigurieren
+    io_out8(SPCR1,(1<<SPE));
 }
 
 
@@ -382,9 +381,8 @@ void emain(void* arg)
 
 //################AB HIER STEHT ALLES FUER DAS SENDER-PROGRAMM #################################################
 
-void init_spi2(){
-	// Diese Funktion muss noch mit Leben gefuellt werden.
-	// ...
+void init_spi2(){//Als Master konfiguriere
+    io_out8(SPCR2,((1<<SPE1) | (1<<MSTR1))
 }
 
 void emain_sender(void* arg)
