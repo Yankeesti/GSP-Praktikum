@@ -4,8 +4,8 @@
 // Bedingte Compilierung 
 // Es darf immer nur ein "define" aktive, d.h. nicht auskommentiert, sein.
 //
-#define V3_Aufgabe_1	
-//#define V3_Aufgabe_2_und_3
+//#define V3_Aufgabe_1
+#define V3_Aufgabe_2_und_3
 //#define nachrichtenempfang_ueber_ports					
 //#define timer_als_taktsignalgenerator					
 //
@@ -345,12 +345,28 @@ uhrzeit akt_zeit, hoch_zeit, runter_zeit;
 
 // Hier muessen noch weitere globale Variablen und Makros eingefuegt werden
 // ...
-
+unsigned char buf;
 
 void init_spi1(){ //SPI1 als slave konfigurieren
-    io_out8(SPCR1,(1<<SPE));
+    io_out8(SPCR1,(1<<SPE1) | (1<<SPIE1));
+    //Interupts Enablen
+    io_out16(PICC,1<PICE)
 }
 
+
+/**
+ * @brief byteEmpfangeIsr
+ * Interupt Service Routine speichert das empfange Byte in byte_recieved
+ * und setzt das SPI Interupt Flag auf 0
+ */
+void  byteEmpfangenIsr(){
+    //Byte einlesen
+    byte_received = io_in8(SPDR1);
+    //Spi Interupt Flag auf 0 setzen
+    buf = io_in8(SPSR1);
+    buf = buf & ~(1<< SPIF1);
+    io_out8(SPSR1,buf);
+}
 
 void emain(void* arg)
 {
@@ -360,7 +376,10 @@ void emain(void* arg)
 
 	// Hier die notwendigen Initialisierungen einfuegen.
 	// ...
-	
+    init_spi1();
+    setInterruptHandler(IVN_SPI1,byteEmpfangenIsr);
+    setInterruptHandler(IVN_SPI2,byteEmpfangenIsr);
+    
 	while(1) {
 #ifndef USER_PROG_2
 		putstring("Sie haben USER_PROG_2 nicht definiert\n");
@@ -382,7 +401,7 @@ void emain(void* arg)
 //################AB HIER STEHT ALLES FUER DAS SENDER-PROGRAMM #################################################
 
 void init_spi2(){//Als Master konfiguriere
-    io_out8(SPCR2,((1<<SPE1) | (1<<MSTR1))
+    io_out8(SPCR2,((1<<SPE1) | (1<<MSTR1)))
 }
 
 void emain_sender(void* arg)
@@ -391,26 +410,49 @@ void emain_sender(void* arg)
 	 unsigned char parametriere_akt_zeit[]		=	"#A000005";
 	 unsigned char parametriere_hoch_zeit[]		=	"#B000105";
 	 unsigned char parametriere_runter_zeit[]	=	"#C000159";
-
+     unsigned char buffer = 0;
 	 
 	 // Hier die notwendigen Initialisierungen einfuegen.
 	 // ...
+    init_spi2();
 
 
 	 while(1) { 
 		 i=0;
 		 do  {
-
+                
 			 // Hier den Code fuer das Versenden eines Bytes einfuegen
 			 // ...
+
+             // Slave Selektieren
+             buffer = io_in8(SPCR2);
+             buffer = buffer & ~(1 << notSS2);
+             io_out8(SPCR2,buffer);
+
+             // Zu sendendes Byte in shift register schreiben
+            io_out8(SPDR2,parametriere_akt_zeit[i]);
+             //warte bis übertragung beendet
+            do{
+                buffer = io_in8(SPSR2);
+                buffer = buffer >> SPIF2;
+                buffer = buffer & 0x01;
+            }while(buffer == 0);
+
 
 			 // Damit der Empfaenger genuegen Zeit zum Reagieren (Einlesen des Bytes) hat
 			 // muss hier geweartet werden.
 			 ms_wait(10);	
 
-			 i++;
+             //Slave deselctieren
+             buffer = io_in8(SPCR2);
+             buffer = buffer | (1 << notSS2);
+             io_out8(SPCR2,buffer);
 
-		 } while(i<127);
+			 i++;
+             if(parametriere_akt_zeit[i] == 0){//abfragen ob das String ende Zeichen erreicht wurde
+                 i = 0;
+             }
+         } while(i<127);
 
 	  }
 		
