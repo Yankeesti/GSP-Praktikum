@@ -162,9 +162,9 @@ void timer1_init()
 
 // Makros damit man beim Testen nicht so lange warten muss
 // Die korrekten Werte stehen als Kommentare jeweils dahinter
-#define SS_MAXW	60	//60
-#define MM_MAXW	60	//60
-#define HH_MAXW	60	//24
+#define SS_MAXW	5	//60
+#define MM_MAXW	3	//60
+#define HH_MAXW	3//24
 
 //	Interrupt Service Routine
 void timer1_oco1_isr()
@@ -226,13 +226,13 @@ void emain(void* arg)
 	cstate = runter;
 
     //Zeit variablen bestimmen
-    hoch_zeit.hh = 0;
+    hoch_zeit.hh = 1;
     hoch_zeit.mm = 0;
-    hoch_zeit.ss = 30;
+    hoch_zeit.ss = 3;
 
-    runter_zeit.hh = 0;
-    runter_zeit.mm = 1;
-    runter_zeit.ss = 0;
+    runter_zeit.hh = 2;
+    runter_zeit.mm = 0;
+    runter_zeit.ss = 3;
 
     //Timer set
     // Zur Sicherheit vor Initialisierung den Interupt des PIC generell deaktivieren
@@ -378,7 +378,7 @@ void emain(void* arg)
 	// ...
     init_spi1();
     setInterruptHandler(IVN_SPI1,byteEmpfangenIsr);
-    setInterruptHandler(IVN_SPI2,byteEmpfangenIsr);
+    //setInterruptHandler(IVN_SPI2,byteEmpfangenIsr);
     
 	while(1) {
 #ifndef USER_PROG_2
